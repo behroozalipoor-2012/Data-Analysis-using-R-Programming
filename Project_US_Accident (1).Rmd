@@ -1,0 +1,358 @@
+---
+title: "THE AGGREGATORS"
+author: "Vijeta, Prasanna, Aditi, Behrooz, Zachary"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  word_document: default
+  pdf_document: default
+---
+  
+```{r setup, include=FALSE, cache = F}
+knitr::opts_chunk$set(
+  echo = TRUE,
+  error = TRUE,
+  warning= FALSE,
+  message= FALSE)
+```
+Introduction- 
+Road accident has become very common these days. In USA more than 38,000 people die in road crash each year and on an average 4.4 million people are injured seriously enough to require medical attention. Source- https://www.asirt.org/safe-travel/road-safety-facts/
+Looking at the severity of the accidents, for this project we have decided to use the US Accident- A Countrywide Traffic Accident Dataset (2016-2000) to find something helpful.
+
+Dataset Information-
+
+The dataset is available at the Kaggle Portal(https://www.kaggle.com/sobhanmoosavi/us-accidents).This is a country wide traffic accident data-set which covers 49 states of the US. There are about 4.2 million accident records in this data-set.It contains all sort of information related to each accident like the weather condition during the accident, which side the accident occurred, address, time of accident etc. There are a total of 49 observations.
+
+Below mentioned are the description of Variable
+
+ID: A unique identifier of accident record
+Source: Types of API who reported Accidents
+TMC: Traffic message channel code which defines the situation in detail.
+Severity: Indicates effect of accident on road traffic by number between 1 and 4. Where 1 indicates short delays  and 4 indicates Long delays
+Start_time: Shows start time of the accident in the local time zone.
+End_Time: Shows end time of the accident in the local time zone.  
+Start_Lat: Shows latitude in GPS coordinate of the start point
+Start_Lng: Shows longitude in GPS coordinate of the start point.
+End_Lat: Shows latitude in GPS coordinate of the end point.
+End_Lng: Shows longitude in GPS coordinate of the end point. 
+Distance(mi): The distance on the road affected by the accident.
+Description: Accident’s senario is explained in words.
+ Number: Specifies the street number in the address variable. 
+Street: Indicates the street name in the address column.
+Side: Shows the relative side of the street (Right/Left) in address field
+City: Indicates the city in the address field.
+County: Depicts the county in the address field.
+State: Shows the state in the address column.
+Zipcode: Shows the zipcode in the address field. 
+Country: Shows the country in the address field.
+Timezone: Indicates time zone depending on the accidents location
+Airport_Code: Denotes an airport-based weather station which is the closest accident’s location..
+Weather_Timestamp: Specify the time-stamp of the weather observation record (in local time).
+Temperature(F): Shows the temperature (in Fahrenheit). 
+Wind_Chill(F): Shows the wind chill (in Fahrenheit).
+Humidity(%): Shows the humidity (in percentage). 
+Pressure(in):Shows the air pressure (in inches).
+Visibility(mi): Shows visibility (in miles). 
+Wind_Direction: Shows wind direction. 
+Wind_Speed(mph): Shows wind speed (in miles per hour).
+Precipitation(in): Indicates precipitation amount in inches, if there is any
+Weather_Condition: Specifies the type of Weather (rain, snow, thunderstorm, fog, etc.
+Amenity: A POI annotation which indicates existence of amenity in a surrounding location.
+Bump: A POI annotation which specifies presence of speed bump or hump in surrounding accident location.
+Crossing:Indicates presence of crossing in a nearby location. 
+Give_Way: Specifies presence of give_way in a nearby location.
+Junction: Denotes presence of junction in a at location of accidents
+No_Exit: Indicates existence of no_exit at location of accident.
+Railway: Implies existence of railway track or crossing  
+Roundabout: existence  of roundabout at location of accident
+Station: Shows the presence of a station in a surrounding incident location. 
+Stop:  presence of stop in a nearby location. 
+Traffic_Calming: A POI annotation which indicates presence of traffic_calming in a nearby location.
+Traffic_Signal: A POI annotation which indicates presence of traffic_signal within a few miles.
+Turning_Loop: Specifies the  presence of turning_loop in a nearby location.
+Sunrise_Sunset: Indicates the time  of day (i.e. day or night) based on sunrise/sunset. 
+Civil_Twilight: Shows the period of day (i.e. day or night) based on civil twilight.
+Nautical_Twilight: Shows the period of day (i.e. day or night) based on nautical twilight
+Astronomical_Twilight Shows the period of day (i.e. day or night) based on astronomical twilight.
+
+
+Research Questions
+We will try to find the trend of accident and the factors effecting accidents. We will also analyze the details of US Accidents in different states to be able to check what can be done to reduce accidents and also to avoid its effect on road traffic.
+
+
+```{r}
+#run library
+
+library(tidyverse)
+```
+
+Import dataset
+```{r}
+US_Accidents <- read_csv("US_Accidents.csv")
+
+```
+
+List column names of data set
+```{r}
+colnames(US_Accidents)
+
+```
+
+Number of rows in data-set
+```{r}
+nrow(US_Accidents)
+
+```
+
+Sampling US_Accidents data-set. The new data-set will contain 1 million rows
+
+```{r}
+US_Accidents_Sample <- US_Accidents[sample(nrow(US_Accidents), 1000000, replace = FALSE, prob = NULL),]
+
+```
+
+Checking type of data frame to confirm it is a tibble
+```{r}
+str(US_Accidents_Sample)
+
+```
+
+View sample dataset in new window and check column names and datatype
+
+```{r}
+View(US_Accidents_Sample)# to view compelete dataset.
+
+glimpse(US_Accidents_Sample) # to check datatype of each column
+
+colnames(US_Accidents_Sample) # to check column names
+
+```
+
+View Unique States in the sample data
+```{r}
+unique(US_Accidents_Sample$State)
+
+```
+
+Export sample data to share with Team members
+
+```{r}
+write_csv(US_Accidents_Sample,"US_Accidents_Sample.csv")
+
+```
+
+Tidy data-set- This dataset has 1 million rows and it has many anomalies like the date and time format, multiple values for zipcode in the same row, etc. To address all these tidying data is an important step to be followed. Following code tidy up our data set.
+
+
+```{r}
+#Changing the Start_Time date format and converting into default format
+
+US_Accidents_Sample$Start_Time <- as.POSIXct(US_Accidents_Sample$Start_Time , format = '%Y/%m/%d %H:%M:%S', tz = 'UTC')
+
+```
+
+```{r}
+#Adding weekday column to the dataset for analysis
+
+US_Accidents_Sample$weekday <- weekdays(US_Accidents_Sample$Start_Time)
+
+```
+
+```{r}
+#Separating the time and date value for "Start_time" and "End_time" Column using separate function.
+
+US_Accidents_Sample <- US_Accidents_Sample %>% 
+  separate(Start_Time, into= c("Accident_year","Start_Accident_month", "Start_Accident_date", "Start_Accident_Hour","Start_Accident_min","Start_Accident_sec")) %>% separate(End_Time, into= c("End_Accident_year","End_Accident_month", "End_Accident_date", "End_Accident_Hour","End_Accident_min","End_Accident_sec"))
+
+```
+
+Removing columns which are not required for our analysis. To know the column names or number, we first check the column name and then with select function we remove the unwanted columns. Assigning the changes to the same dataset (US_Accidents_Sample) to avoid confusion.
+
+```{r}
+colnames(US_Accidents_Sample)
+
+US_Accidents_Sample <- US_Accidents_Sample %>% 
+select(-c(2,3,19,20,29,30,32,33,55,57,58,59))
+
+```
+
+Changing few column names to make them more readable.
+
+```{r}
+colnames(US_Accidents_Sample) = c("ID","Severity", "Accident_year", "Start_Accident_month","Start_Accident_date","Start_Accident_hour","Start_Accident_min", "Start_Accident_sec","End_Accident_year","End_Accident_month","End_Accident_date","End_Accident_Hour","End_Accident_min","End_Accident_sec","Start_Lat","Start_Lng","Distance","Description","Number","Street","Side","City","County","State","Timezone","Temperature","Wind_Chill","Humidity","Pressure","Visibility","Wind_Direction","Wind_Speed","Precipitation","Weather_Condition","Amenity","Bump","Crossing","Give_Way","Junction","No_Exit","Railway","Roundabout","Station","Stop","Traffic_Calming","Traffic_Signal","Sunrise_Sunset", "Weekday")
+
+```
+
+Converting few columns to correct datatypes.
+```{r}
+
+US_Accidents_Sample <- US_Accidents_Sample %>% 
+  mutate_at(c(3,4,5,6,7,8,9,10,11,12,13,14), as.integer) %>% 
+  mutate_at(c(2), as.factor)
+
+```
+After tidying up, adding new columns, changing datatype and changing column names of the dataset, the new US_Accidents_Sample has the following column names.
+
+```{r}
+view(US_Accidents_Sample)
+colnames(US_Accidents_Sample)
+
+```
+
+Accident Per Year- The following query calculates and visualizes the number of accidents per year.
+```{r}
+by_year<- US_Accidents_Sample %>% 
+  group_by(Accident_year) %>% 
+  summarise(total_accident= n())
+
+#To group the number of accidents based on year we used group_by function for Accident_year, and then used summarise function to calculate total number of accidents.
+
+ggplot(data = US_Accidents_Sample)+
+  geom_bar(mapping = aes(x= Accident_year, fill= as_factor(Severity)), position = "dodge")+
+  ggtitle("Accidents by Year")+
+  theme_grey()
+
+#using ggplot we created a bar graph , adding a layer to ggplot using geom_bar and in ascetics we have taken accident_year on X-Axis and fill for severity, followed by position function with dodge to align them side by side without any overlapping of bars, then titled the graph as Accidents by Year using ggtitle function, then gave the theme in light color for background using theme_light
+
+#Since in the above graph severity 1 and 4 accidents were not clearly visible, we plotted separate graph for each severity type.
+
+ggplot(data = US_Accidents_Sample)+
+  geom_bar(mapping = aes(x= Accident_year,colour = "Severity"), colour = "blue", fill = "blue")+
+  ggtitle("Accidents by Year")+
+  theme_grey()+
+  facet_wrap(~Severity)
+```
+Observations-
+From the above bar graph we can see that the total number of accidents are gradually increasing with every passing year. The bar graph shows that year 2020 has most number of accidents, although the number of severity 3 accidents has declined after 2018. It also shows that majority of the accidents belong to severity 2. Severity 1 and 4 accidents are rare and have been consistent in number over years.
+
+
+Accident by State, arranged in descending order and visualizing top 5 states by number of accidents.
+```{r}
+by_state<- US_Accidents_Sample %>% 
+  group_by(State) %>% 
+  summarise(No.of_accident = n()) %>% 
+  arrange(desc(No.of_accident))
+
+# Here to get the data by state, we have grouped data by state then summarized it to get the count of accidents by state and arranged it in descending order.
+ 
+#Summary of accidents by state 
+summary(by_state)
+
+#graph showing top 5 states with highest number of accidents.
+# Here we have used gglot to plot the top 5 states with highest number of accidents.
+
+top_states<- top_n(by_state, 5)
+
+ggplot(data= top_states, aes(x=State, y=No.of_accident)) +
+  geom_histogram(stat="identity", fill="steelblue")+
+   ggtitle("Top 5 Accident States")+
+  geom_text(aes(label=percentage_accident), vjust=1.5, color="white", size=3.5)+
+  theme_grey()
+```
+Observations-
+From the graph we can conclude that California has highest number of accidents with almost 23% of all accidents in USA.The next state after California is Texas with approx 9% of the total number of accidents. It would be interesting to know what factors contribute sharp decline in number of accidents in Texas considering that TX is twice the size of CA.
+
+
+Analyzing the distribution of severity of the accidents and checking at which time majority of these accidents occur.
+```{r}
+
+ggplot(data= US_Accidents_Sample, mapping = aes(x= Severity))+
+  geom_bar(mapping = aes(fill = Sunrise_Sunset))+
+  ggtitle("Accident Severity Count Barchart")
+
+#The function ggplot() creates a coordinate system in which you can add layers to it and geom_bar(data=top_states) adds a blank graph, The mapping argument is always paired with aes(), and the x and y arguments of aes() specify which variables to map to the x and y axis and geom_bar() will create a bar chart with x axis = Severity
+
+#As now we know that day has majority of accidents, now we are trying to find which time of the day has most accidents.
+
+by_timeofDay<-
+  US_Accidents_Sample %>% 
+  group_by(Start_Accident_hour) %>% 
+  summarise(accident_count= n())
+
+#Here we have used group_by() to group Start_Accident_hour ,summarise() will Collapse many values down to a single summary into variable named count.The Pipe %>% operator is used to update a value by first piping it into one or more expressions, and then assigning the result.
+
+ggplot(data = US_Accidents_Sample)+
+  geom_bar(mapping = aes(x=Start_Accident_hour, fill = as.factor(Severity)))
+
+#The function ggplot() creates a coordinate system that you can add layers to and ggplot(data=US_Accident_hour) adds a blank graph. The next layer is geom which determines the shape of the chart, here it is bar chart with x= Start_Accident_hour and as Severity has character datatype to change it in categorical data so we used as.factor 
+
+```
+Observation-
+From the bar graph we can see that most of the accidents occurs in day time. One possible reason that we could think of is due to higher commute during day  compared to night.
+From the second graph, we can see that most of the accidents occurs at 7am, 8am, 4pm and 5pm. One of the reasons could be these are office starting hours and most of the people leave for work and come back from work at these timings.
+
+
+Analyze which side of the road has more accidents.
+```{r}
+by_side <- US_Accidents_Sample %>% 
+  group_by(Side) %>% 
+  summarise(count = n())
+
+#Here we have used group_by() to group Side variable,summarise() will Collapse many values down to a single summary into variable named count.The Pipe %>% operator is used to update a value by first piping it into one or more expressions, and then assigning the result.
+
+
+  ggplot(data = by_side, mapping = aes (x= Side,y= count, fill = Side))+
+  geom_bar(stat="identity")+
+    ggtitle("Accidents_by_Side")+
+    geom_text(aes(label= count), vjust=1.5, color="black", size=3.5)+
+  theme_classic()
+  
+#The function ggplot() creates a coordinate system that you can add layers to and ggplot(data=by_side) adds a blank graph. The next layer is geom which determines the shape of the chart, here it is bar chart. ggtitle is used to give over all title to chart and geom_text is used to modify text like label is used to display count on bars.
+
+```
+Observations-
+The graph shows that most of the accidents occurs at the right side of the road whereas left side are very less number of accidents. It is quite surprising because the left most lanes is the fastest one. One reason for this could be high number of lane merging that vehicles do while entering or exiting the express.
+
+
+Analyze number of accidents in different Weather conditions along with to 5 weather conditions that contributes the most.
+```{r}
+by_weather_condition<- US_Accidents_Sample %>% 
+  group_by(Weather_Condition) %>% 
+  summarise(No_of_Accident=n()) %>% 
+  arrange(desc(No_of_Accident))
+
+#Top 10 weather conditions for most of the accidents
+
+top5_WC<- top_n(by_weather_condition, 5)
+
+```
+Observation-
+Counter intuitively, most of the accidents appear to occur in fair and clear weather conditions.
+
+Analyze which month has the highest number of accidents.
+```{r}
+by_month<- US_Accidents_Sample %>%
+group_by(Start_Accident_month) %>%
+summarise(No.of_accident = n()) %>%
+arrange(desc(No.of_accident)) %>% 
+mutate(percentage_accident = round(No.of_accident/sum(No.of_accident)*100,2))
+
+#Here we have used group by to group Start_Accident_month than assigned the total number of accidents in a variable. We also created a new column by using mutate(), in this we used round() which rounds the values in its first argument to the specified number of decimal places(default 0).sum() in percentage formula  is used to get values in percentage.
+
+ggplot(data=by_month, mapping=aes(x="",y=percentage_accident,fill = Start_Accident_month)) +
+geom_bar(stat="identity")+
+ggtitle("Accident by Months")+
+geom_text(aes(label=paste0(round(percentage_accident,1),"%")), position = position_stack(vjust=0.5)) +
+coord_polar("y",start=0)+
+theme_classic()+
+theme(axis.text = element_blank()) + xlab("Months") + ylab("Total Accidents(%)")
+
+#The function ggplot() creates a coordinate system that you can add layers to and geom_bar(data=by_month) adds a blank graph. Geom is another layer which determines the shape of the chart.Pie Chart = stacked bar chart + polar coordinates. We have first created a bar chart using geom_bar, stat = "identity" is to skip the aggregation and it will consider the y values and ggtitle is for adding title to overall plot title. geom_text is for adding labels in which paste0 function in R simply concatenates the vector without any separator. A theme_classic() shows x and y axis lines and no gridlines and the coord_polar() is used to produce a pie chart.
+
+```
+Observation-
+This chart shows that July has the least percentage of accidents and December has the highest percentage of accidents which is the holiday season in the USA, it is quite surprising that holidays have an significant effect on accidents.
+
+Preliminary Conclusion-
+- Even though the number of low severity and very high severity accidents are almost constant over the years. The severity 2 accidents are sharply increasing resulting in higher total number of accidents.
+- CA has the highest number of accidents as much as 2.5 times that of TX which is the second in the rank. It would be interesting to know what factors contribute sharp decline in number of accidents in Texas considering that TX is twice the size of CA.
+- Most of the accidents happen during day time possibly due to high traffic caused by people commuting to the office and back home.
+- Even though left most lanes is the fastest one, the graph shows that right side of the lane has highest number of accidents. One reason for this could be high number of lane merging that vehicles do while entering or exiting the express.
+- Most of the accidents appear to occur in fair and clear weather conditions. It would be interesting to explore the severity of these accidents.
+- December being the holiday season has the highest number of accidents.
+
+
+
+
+
+
+
